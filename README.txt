@@ -12,6 +12,13 @@ To start, I'm implementing Train Tracker API.
 
 I intend to make the data more well formed and parsed, validated etc later.  It implements a thin little caching layer to conserve API usage.
 
+This is a quick wrapper around http://www.transitchicago.com/assets/1/developer_center/cta_Train_Tracker_API_documentation_v1_2.pdf
+
+To add:
+
+* Stop listings
+* Finding closest stops by lat/long
+
 # Dependencies
 
 * git://github.com/martinblech/xmltodict.git

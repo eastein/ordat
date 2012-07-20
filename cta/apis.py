@@ -20,6 +20,8 @@ class CachingXMLAPI(object) :
 				exp, data = self.cache[uri]
 				if exp <= time.time() + self.timeout :
 					return data
+				else :
+					del self.cache[uri]
 
 		#print 'GET %s' % uri
 		resp = requests.get(uri)
