@@ -9,7 +9,7 @@ This library is for accessing Chicago related data via Python.  I'd prefer to fo
 To start, I'm implementing Train Tracker API.
 
     import cta
-    train = cta.Train(apikey='YOURKEYHERE')
+    train = cta.Train(key='YOURKEYHERE')
     train.arrivals(mapid=40380)
 
 I intend to make the data more well formed and parsed, validated etc later.  It implements a thin little caching layer to conserve API usage.
@@ -18,10 +18,15 @@ This is a quick wrapper around http://www.transitchicago.com/assets/1/developer_
 
 To add:
 
-* Stop listings
-* Finding closest stops by lat/long
+* Station/Stop listings
+* Finding closest stations by lat/long, line, name, etc
+* Unit testing for all of above
+* Relate responses and requests on the arrivals API to my object hierarchy
+* Color codes on lines
+* Directionality of lines
+* Determine 'next' stops for each stop (platform)
 
-<A name="toc1-23" title="Dependencies" />
+<A name="toc1-28" title="Dependencies" />
 # Dependencies
 
 * git://github.com/martinblech/xmltodict.git

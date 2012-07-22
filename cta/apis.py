@@ -10,9 +10,9 @@ class Failure(Exception) :
 	pass
 
 class CachingXMLAPI(object) :
-	def __init__(self, apikey=None, timeout=30) :
+	def __init__(self, key=None, timeout=30) :
 		self.cache = {}
-		self.apikey = apikey
+		self.key = key
 		self.timeout = timeout
 		self.cachelock = threading.Lock()
 
@@ -138,7 +138,7 @@ load()
 
 class Train(CachingXMLAPI) :
 	def arrivals(self, **kw) :
-		kw['key'] = self.apikey
-		# TODO care about security and encoding, or do I even need to bother? I'm a client.
+		kw['key'] = self.key
 		args = '&'.join([('%s=%s' % (k,v)) for (k,v) in kw.items()])
-		return self.req('http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?%s' % args)
+		data = self.req('http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?%s' % args)
+		return data
