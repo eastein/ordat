@@ -269,7 +269,7 @@ class Arrival(object) :
 """
 
 class Train(CachingXMLAPI) :
-	trains = weakref.WeakSet()
+	trains = set()
 
 	class Empty(Exception) :
 		"""
@@ -278,15 +278,27 @@ class Train(CachingXMLAPI) :
 		pass
 
 	def __init__(self, *a, **kw) :
-		self.trains.add(self)
+		self.trains.add(weakref.ref(self))
 		CachingXMLAPI.__init__(self, *a, **kw)
 
 	@classmethod
 	def getapi(cls) :
-		try :
-			return list(cls.trains)[0]
-		except :
-			raise cls.Empty
+		dead_refs = []
+		r = None
+		for ref in cls.trains :
+			r = ref()
+			if not r :
+				dead_refs.append(ref)
+			else :
+				break
+
+		for dr in dead_refs :
+			cls.trains.remove(dr)
+
+		if r :
+			return r
+
+		raise cls.Empty
 
 	def arrivals(self, **kw) :
 		kw['key'] = self.key
