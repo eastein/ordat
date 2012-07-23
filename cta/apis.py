@@ -6,6 +6,7 @@ import threading
 import os.path
 import csv
 import weakref
+import utility_funcs
 
 class Failure(Exception) :
 	pass
@@ -16,7 +17,7 @@ class APIFailure(Failure) :
 	pass
 
 class CachingXMLAPI(object) :
-	def __init__(self, key=None, timeout=30.0) :
+	def __init__(self, key=None, timeout=60.0) :
 		self.cache = {}
 		self.key = key
 		self.timeout = timeout
@@ -31,7 +32,7 @@ class CachingXMLAPI(object) :
 				else :
 					return data
 
-		print 'GET %s' % uri
+		#print 'GET %s' % uri
 		resp = requests.get(uri)
 		if resp.status_code != 200 :
 			raise HTTPFailure(resp.status_code)
@@ -67,7 +68,15 @@ class Line(object) :
 	def __str__(self) :
 		return '%s Line' % self.name
 
-class Station(object) :
+class GeoObject(object) :
+	def to_km(self, other) :
+		return utility_funcs.distance(self.loc, other.loc)
+
+	def to_mi(self, other) :
+		km = self.to_km(other)
+		return km * 0.62137119223733396962
+
+class Station(GeoObject) :
 	all = []
 	byid = {}
 
@@ -98,7 +107,7 @@ class Station(object) :
 	def __str__(self) :
 		return 'Station %s' % self.name
 
-class Stop(object) :
+class Stop(GeoObject) :
 	all = []
 	byid = {}
 
@@ -192,6 +201,20 @@ class Arrival(object) :
 			if not hasattr(self, 'raw') :
 				print 'error! for debugging, here is the raw...' 
 				print raw
+
+	@property
+	def arrives_ts(self) :
+		"""
+		Arrival time in epoch.
+		"""
+		return time.mktime(self.arrives)
+
+	@property
+	def predicted_ts(self) :
+		"""
+		When the prediction was generated, in epoch.
+		"""
+		return time.mktime(self.predicted)
 
 	def __repr__(self) :
 		return str(self)
