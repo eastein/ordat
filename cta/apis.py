@@ -76,7 +76,20 @@ class GeoObject(object) :
 		km = self.to_km(other)
 		return km * 0.62137119223733396962
 
-class Station(GeoObject) :
+class FindName(object) :
+	@classmethod
+	def find(cls, text) :
+		levens = dict()
+		for obj in cls.all :
+			leven = utility_funcs.levenshtein(text, obj.name)
+			levens.setdefault(leven, [])
+			levens[leven].append(obj)
+		try :
+			return levens[min(levens.keys())]
+		except ValueError :
+			return []
+
+class Station(GeoObject, FindName) :
 	all = []
 	byid = {}
 
