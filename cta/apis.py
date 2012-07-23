@@ -45,9 +45,10 @@ class Line(object) :
 	all = []
 	bycode = {}
 
-	def __init__(self, name, code) :
+	def __init__(self, name, code, unixcolor) :
 		self.name = name
 		self.code = code
+		self.unixcolor = unixcolor
 		self.stops = []
 
 		self.all.append(self)
@@ -153,15 +154,15 @@ class Stop(GeoObject) :
 	def __str__(self) :
 		return '%s-bound Stop %s at %s' % (self.dir_code, self.name, self.station)
 
-Line.Blue = Line('Blue', 'Blue')
-Line.Brown = Line('Brown', 'Brn')
-Line.Red = Line('Red', 'Red')
-Line.Green = Line('Green', 'G')
-Line.Purple = Line('Purple', 'P')
-Line.Purple = Line('Pink', 'Pink')
-Line.PurpleExpress = Line('Purple Express', 'Pexp')
-Line.Yellow = Line('Yellow', 'Y')
-Line.Orange = Line('Orange', 'Org')
+Line.Blue = Line('Blue', 'Blue', 12)
+Line.Brown = Line('Brown', 'Brn', 5)
+Line.Red = Line('Red', 'Red', 4)
+Line.Green = Line('Green', 'G', 3)
+Line.Purple = Line('Purple', 'P', 6)
+Line.Purple = Line('Pink', 'Pink', 13)
+Line.PurpleExpress = Line('Purple Express', 'Pexp', 6)
+Line.Yellow = Line('Yellow', 'Y', 8)
+Line.Orange = Line('Orange', 'Org', 7)
 
 def load() :
 	f = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cta_L_stops.csv')
@@ -209,6 +210,7 @@ class Arrival(object) :
 			self.arrives = Arrival.totime(raw['arrT'])
 			self.predicted = Arrival.totime(raw['prdt'])
 			self.run_number = long(raw['rn'])
+			self.dest_name = raw['destNm']
 			self.raw = raw
 		finally :
 			if not hasattr(self, 'raw') :
@@ -223,6 +225,10 @@ class Arrival(object) :
 		return time.mktime(self.arrives)
 
 	@property
+	def mil_arrives(self) :
+		return time.strftime("%H:%M:%S", self.arrives)
+
+	@property
 	def predicted_ts(self) :
 		"""
 		When the prediction was generated, in epoch.
@@ -232,7 +238,7 @@ class Arrival(object) :
 	def __repr__(self) :
 		return str(self)
 	def __str__(self) :
-		return '%s/%s run %d at %s' % (self.line, self.stop.name, self.run_number, self.arrives)
+		return '%s/%s run %d to %s at %s' % (self.line, self.stop.station.name, self.run_number, self.dest_name, self.mil_arrives)
 
 """
 {
