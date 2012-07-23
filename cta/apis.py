@@ -5,6 +5,7 @@ import time
 import threading
 import os.path
 import csv
+import weakref
 
 class Failure(Exception) :
 	pass
@@ -51,9 +52,15 @@ class Line(object) :
 		self.all.append(self)
 		self.bycode[self.code] = self
 	
+	def add_stop(self, stop) :
+		self.stops.append(stop)
+
 	@property
 	def stations(self) :
-		raise NotImplemented
+		stations = set()
+		for stop in self.stops :
+			stations.add(stop.station)
+		return list(stations)
 
 	def __repr__(self) :
 		return str(self)
@@ -74,6 +81,15 @@ class Station(object) :
 		self.all.append(self)
 		self.byid[self.id] = self
 
+	def arrivals(self, api=None) :
+		if api is None :
+			api = Train.getapi()
+		return api.arrivals(mapid=self.id)
+
+	@property
+	def lines(self) :
+		return list(set(reduce(lambda l1,l2: l1+l2, [stop.lines for stop in self.stops])))
+
 	def add_stop(self, stop) :
 		self.stops.append(stop)
 
@@ -91,10 +107,20 @@ class Stop(object) :
 		self.name = name
 		self.station = station
 		self.dir_code = dir_code
-		
+		self.lines = []
+
 		self.station.add_stop(self)
 		self.all.append(self)
 		self.byid[self.id] = self
+
+	def add_line(self, line) :
+		self.lines.append(line)
+		line.add_stop(self)
+
+	def arrivals(self, api=None) :
+		if api is None :
+			api = Train.getapi()
+		return api.arrivals(stpid=self.id)
 
 	@property
 	def loc(self) :
@@ -110,6 +136,7 @@ Line.Brown = Line('Brown', 'Brn')
 Line.Red = Line('Red', 'Red')
 Line.Green = Line('Green', 'G')
 Line.Purple = Line('Purple', 'P')
+Line.Purple = Line('Pink', 'Pink')
 Line.PurpleExpress = Line('Purple Express', 'Pexp')
 Line.Yellow = Line('Yellow', 'Y')
 Line.Orange = Line('Orange', 'Org')
@@ -117,7 +144,7 @@ Line.Orange = Line('Orange', 'Org')
 def load() :
 	f = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cta_L_stops.csv')
 
-	linecodes = set([l.code for l in Line.all])
+	linecodes = set(Line.bycode.keys())
 
 	for sd in csv.DictReader(open(f)) :
 		stop_id = long(sd['STOP_ID'])
@@ -140,6 +167,10 @@ def load() :
 			station = Station(station_id, station_name, station_desc, lat, lon)
 
 		stop = Stop(stop_id, stop_name, station, dir_code)
+		for k,v in sd.items() :
+			if k in Line.bycode and long(v) == 1 :
+				line = Line.bycode[k]
+				stop.add_line(line)
 
 load()
 
@@ -149,13 +180,18 @@ class Arrival(object) :
 		return time.strptime(s, '%Y%m%d %H:%M:%S')
 
 	def __init__(self, raw) :
-		self.line = Line.bycode[raw['rt']]
-		self.station = Station.byid[long(raw['staId'])]
-		self.stop = Stop.byid[long(raw['stpId'])]
-		self.arrives = Arrival.totime(raw['arrT'])
-		self.predicted = Arrival.totime(raw['prdt'])
-		self.run_number = long(raw['rn'])
-		self.raw = raw
+		try :
+			self.line = Line.bycode[raw['rt']]
+			self.station = Station.byid[long(raw['staId'])]
+			self.stop = Stop.byid[long(raw['stpId'])]
+			self.arrives = Arrival.totime(raw['arrT'])
+			self.predicted = Arrival.totime(raw['prdt'])
+			self.run_number = long(raw['rn'])
+			self.raw = raw
+		finally :
+			if not hasattr(self, 'raw') :
+				print 'error! for debugging, here is the raw...' 
+				print raw
 
 	def __repr__(self) :
 		return str(self)
@@ -183,12 +219,47 @@ class Arrival(object) :
 """
 
 class Train(CachingXMLAPI) :
+	trains = weakref.WeakSet()
+
+	class Empty(Exception) :
+		"""
+		No API instances are active in the process, so we're left without any available.  Make one first.
+		"""
+		pass
+
+	def __init__(self, *a, **kw) :
+		self.trains.add(self)
+		CachingXMLAPI.__init__(self, *a, **kw)
+
+	@classmethod
+	def getapi(cls) :
+		try :
+			return list(cls.trains)[0]
+		except :
+			raise cls.Empty
+
 	def arrivals(self, **kw) :
 		kw['key'] = self.key
 		args = '&'.join([('%s=%s' % (k,v)) for (k,v) in kw.items()])
-		data = self.req('http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?%s' % args)['ctatt']
+		url = 'http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?%s' % args
+		data = self.req(url)['ctatt']
 		if data['errNm'] :
 			raise APIFailure('CTA Traintracker API Failure: %s' % data['errNm'])
 
 		tmst = Arrival.totime(data['tmst'])
-		return [Arrival(eta) for eta in data['eta']]
+
+		# 0 etas present...
+		if 'eta' not in data :
+			return []
+
+		# 1 eta present..
+		etas = data['eta']
+		if isinstance(etas, dict) :
+			etas = [etas]
+
+		# there we go, now we have a list at least
+
+		a = list()		
+		for eta in etas :
+			a.append(Arrival(eta))
+		return a
