@@ -32,10 +32,10 @@ class CachingXMLAPI(object) :
 				else :
 					return data
 
-		#print 'GET %s' % uri
+		print 'GET %s' % uri
 		resp = requests.get(uri)
 		if resp.status_code != 200 :
-			raise HTTPFailure(resp.status_code)
+			raise HTTPFailure("Unacceptable HTTP status code %d" % resp.status_code)
 
 		data = xmltodict.parse(resp.content)
 		self.cache[uri] = (time.time() + self.timeout, data)
@@ -80,6 +80,14 @@ class GeoObject(object) :
 class FindName(object) :
 	@classmethod
 	def find(cls, text) :
+		"""
+		Find the most relevant station(s)
+
+		Improvements:
+		* don't return values that are blatantly off (steal code from psyched considered_similar function)
+		* do something with lcs
+		* perhaps accept a sub-list as a parameter (the user searching's favorites, or similar) 
+		"""
 		levens = dict()
 		for obj in cls.all :
 			leven = utility_funcs.levenshtein(text, obj.name)
@@ -238,7 +246,7 @@ class Arrival(object) :
 	def __repr__(self) :
 		return str(self)
 	def __str__(self) :
-		return '%s/%s run %d to %s at %s' % (self.line, self.stop.station.name, self.run_number, self.dest_name, self.mil_arrives)
+		return '%s/%s run %d to %s at %s' % (self.line, self.station.name, self.run_number, self.dest_name, self.mil_arrives)
 
 """
 {
