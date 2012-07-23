@@ -16,7 +16,7 @@ class APIFailure(Failure) :
 	pass
 
 class CachingXMLAPI(object) :
-	def __init__(self, key=None, timeout=30) :
+	def __init__(self, key=None, timeout=30.0) :
 		self.cache = {}
 		self.key = key
 		self.timeout = timeout
@@ -26,18 +26,18 @@ class CachingXMLAPI(object) :
 		with self.cachelock :
 			if uri in self.cache :
 				exp, data = self.cache[uri]
-				if exp <= time.time() + self.timeout :
-					return data
-				else :
+				if time.time() >= exp :
 					del self.cache[uri]
+				else :
+					return data
 
-		#print 'GET %s' % uri
+		print 'GET %s' % uri
 		resp = requests.get(uri)
 		if resp.status_code != 200 :
 			raise HTTPFailure(resp.status_code)
 
 		data = xmltodict.parse(resp.content)
-		self.cache[uri] = (time.time(), data)
+		self.cache[uri] = (time.time() + self.timeout, data)
 		return data
 
 class Line(object) :
