@@ -9,6 +9,11 @@ import csv
 class Failure(Exception) :
 	pass
 
+class HTTPFailure(Failure) :
+	pass
+class APIFailure(Failure) :
+	pass
+
 class CachingXMLAPI(object) :
 	def __init__(self, key=None, timeout=30) :
 		self.cache = {}
@@ -28,7 +33,7 @@ class CachingXMLAPI(object) :
 		#print 'GET %s' % uri
 		resp = requests.get(uri)
 		if resp.status_code != 200 :
-			raise Failure(resp.status_code)
+			raise HTTPFailure(resp.status_code)
 
 		data = xmltodict.parse(resp.content)
 		self.cache[uri] = (time.time(), data)
@@ -79,6 +84,7 @@ class Station(object) :
 
 class Stop(object) :
 	all = []
+	byid = {}
 
 	def __init__(self, id, name, station, dir_code) :
 		self.id = id
@@ -88,6 +94,7 @@ class Stop(object) :
 		
 		self.station.add_stop(self)
 		self.all.append(self)
+		self.byid[self.id] = self
 
 	@property
 	def loc(self) :
@@ -96,7 +103,7 @@ class Stop(object) :
 	def __repr__(self) :
 		return str(self)
 	def __str__(self) :
-		return 'Stop %s at %s' % (self.name, self.station)
+		return '%s-bound Stop %s at %s' % (self.dir_code, self.name, self.station)
 
 Line.Blue = Line('Blue', 'Blue')
 Line.Brown = Line('Brown', 'Brn')
@@ -136,9 +143,52 @@ def load() :
 
 load()
 
+class Arrival(object) :
+	@classmethod
+	def totime(cls, s) :
+		return time.strptime(s, '%Y%m%d %H:%M:%S')
+
+	def __init__(self, raw) :
+		self.line = Line.bycode[raw['rt']]
+		self.station = Station.byid[long(raw['staId'])]
+		self.stop = Stop.byid[long(raw['stpId'])]
+		self.arrives = Arrival.totime(raw['arrT'])
+		self.predicted = Arrival.totime(raw['prdt'])
+		self.run_number = long(raw['rn'])
+		self.raw = raw
+
+	def __repr__(self) :
+		return str(self)
+	def __str__(self) :
+		return '%s/%s run %d at %s' % (self.line, self.stop.name, self.run_number, self.arrives)
+
+"""
+{
+           u'arrT': u'20120722 18:30:19',
+           u'destNm': u'Forest Park',
+           u'destSt': u'0',
+           u'flags': None,
+           u'isApp': u'0',
+           u'isDly': u'0',
+           u'isFlt': u'0',
+           u'isSch': u'0',
+           u'prdt': u'20120722 18:13:19',
+           u'rn': u'217',
+           u'rt': u'Blue',
+           u'staId': u'40590',
+           u'staNm': u'Damen',
+           u'stpDe': u'Service toward Forest Park',
+           u'stpId': u'30116',
+           u'trDr': u'5'},
+"""
+
 class Train(CachingXMLAPI) :
 	def arrivals(self, **kw) :
 		kw['key'] = self.key
 		args = '&'.join([('%s=%s' % (k,v)) for (k,v) in kw.items()])
-		data = self.req('http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?%s' % args)
-		return data
+		data = self.req('http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?%s' % args)['ctatt']
+		if data['errNm'] :
+			raise APIFailure('CTA Traintracker API Failure: %s' % data['errNm'])
+
+		tmst = Arrival.totime(data['tmst'])
+		return [Arrival(eta) for eta in data['eta']]
