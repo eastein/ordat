@@ -41,42 +41,6 @@ class CachingXMLAPI(object) :
 		self.cache[uri] = (time.time() + self.timeout, data)
 		return data
 
-class Line(object) :
-	all = []
-	bycode = {}
-
-	def __init__(self, name, code, unixcolor) :
-		self.name = name
-		self.code = code
-		self.unixcolor = unixcolor
-		self.stops = []
-
-		self.all.append(self)
-		self.bycode[self.code] = self
-	
-	def add_stop(self, stop) :
-		self.stops.append(stop)
-
-	@property
-	def stations(self) :
-		stations = set()
-		for stop in self.stops :
-			stations.add(stop.station)
-		return list(stations)
-
-	def __repr__(self) :
-		return str(self)
-	def __str__(self) :
-		return '%s Line' % self.name
-
-class GeoObject(object) :
-	def to_km(self, other) :
-		return utility_funcs.distance(self.loc, other.loc)
-
-	def to_mi(self, other) :
-		km = self.to_km(other)
-		return km * 0.62137119223733396962
-
 class FindName(object) :
 	@classmethod
 	def find(cls, text) :
@@ -118,6 +82,43 @@ class FindName(object) :
 			return levens[min(levens.keys())]
 		except ValueError :
 			return []
+
+
+class Line(FindName) :
+	all = []
+	bycode = {}
+
+	def __init__(self, name, code, unixcolor) :
+		self.name = name
+		self.code = code
+		self.unixcolor = unixcolor
+		self.stops = []
+
+		self.all.append(self)
+		self.bycode[self.code] = self
+	
+	def add_stop(self, stop) :
+		self.stops.append(stop)
+
+	@property
+	def stations(self) :
+		stations = set()
+		for stop in self.stops :
+			stations.add(stop.station)
+		return list(stations)
+
+	def __repr__(self) :
+		return str(self)
+	def __str__(self) :
+		return '%s Line' % self.name
+
+class GeoObject(object) :
+	def to_km(self, other) :
+		return utility_funcs.distance(self.loc, other.loc)
+
+	def to_mi(self, other) :
+		km = self.to_km(other)
+		return km * 0.62137119223733396962
 
 class Station(GeoObject, FindName) :
 	all = []
