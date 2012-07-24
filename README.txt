@@ -60,3 +60,9 @@ To add:
 
 * git://github.com/martinblech/xmltodict.git
 * Everything in requirements.txt
+
+# Tests
+
+    PYTHONPATH=../xmltodict:~/pyenvs/cta/lib/python2.7/site-packages/ nosetests -vv tests
+
+The above is just an example, I'm not sure why virtualenv isn't picking up the requests module just by sourcing activate.

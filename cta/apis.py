@@ -1,7 +1,7 @@
-import requests
 import sys
 import xmltodict
 import time
+import requests
 import threading
 import os.path
 import csv
@@ -88,9 +88,30 @@ class FindName(object) :
 		* do something with lcs
 		* perhaps accept a sub-list as a parameter (the user searching's favorites, or similar) 
 		"""
+		text = text.lower()
+
+		def get_uniq(lamb) :
+			r = None
+			for obj in cls.all :
+				if lamb(obj) :
+					if r is None :
+						# ok, maybe this will be the only one!
+						r = obj
+					else :
+						# duplicate, give up - this one isn't exclusive enough
+						return None
+			return r
+
+		obj = get_uniq(lambda obj: obj.name.lower().startswith(text))
+		if obj :
+			return [obj]
+		obj = get_uniq(lambda obj: text in obj.name.lower())
+		if obj :
+			return [obj]
+
 		levens = dict()
 		for obj in cls.all :
-			leven = utility_funcs.levenshtein(text, obj.name)
+			leven = utility_funcs.levenshtein(text, obj.name.lower())
 			levens.setdefault(leven, [])
 			levens[leven].append(obj)
 		try :
