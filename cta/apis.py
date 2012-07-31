@@ -17,7 +17,7 @@ class APIFailure(Failure) :
 	pass
 
 class CachingXMLAPI(object) :
-	def __init__(self, key=None, timeout=60.0) :
+	def __init__(self, key=None, timeout=15.0) :
 		self.cache = {}
 		self.key = key
 		self.timeout = timeout
@@ -32,7 +32,7 @@ class CachingXMLAPI(object) :
 				else :
 					return data
 
-		print 'GET %s' % uri
+		#print 'GET %s' % uri
 		resp = requests.get(uri)
 		if resp.status_code != 200 :
 			raise HTTPFailure("Unacceptable HTTP status code %d" % resp.status_code)
