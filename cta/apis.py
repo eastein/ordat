@@ -241,6 +241,9 @@ class Arrival(object) :
 			self.predicted = Arrival.totime(raw['prdt'])
 			self.run_number = long(raw['rn'])
 			self.dest_name = raw['destNm']
+			self.scheduled = bool(long(raw['isSch']))
+			self.fault = bool(long(raw['isFlt']))
+			self.delay = bool(long(raw['isDly']))
 			self.raw = raw
 		finally :
 			if not hasattr(self, 'raw') :
