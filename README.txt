@@ -27,6 +27,16 @@ To start, I'm implementing Train Tracker API.  Below is a cursory usage example.
 
 This was run late at night, so it found far less than normal!
 
+### Find Current Train Locations
+
+    import cta
+    train = cta.Train(key='YOURKEYHERE')
+    tr = cta.panopticon.Tracker()
+    for rn,lat,lon in tr.step() :
+      print rn, lat, lon
+
+This can take a bit to pick up the locations, so run the last two lines a couple times and wait in between.
+
 ### Station Search, Station Arrivals, Stop Arrivals
 
     >>> # Find a station, and then check its arrivals

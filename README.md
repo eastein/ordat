@@ -32,7 +32,18 @@ To start, I'm implementing Train Tracker API.  Below is a cursory usage example.
 
 This was run late at night, so it found far less than normal!
 
-<A name="toc3-34" title="Station Search, Station Arrivals, Stop Arrivals" />
+<A name="toc3-34" title="Find Current Train Locations" />
+### Find Current Train Locations
+
+    import cta
+    train = cta.Train(key='YOURKEYHERE')
+    tr = cta.panopticon.Tracker()
+    for rn,lat,lon in tr.step() :
+      print rn, lat, lon
+
+This can take a bit to pick up the locations, so run the last two lines a couple times and wait in between.
+
+<A name="toc3-45" title="Station Search, Station Arrivals, Stop Arrivals" />
 ### Station Search, Station Arrivals, Stop Arrivals
 
     >>> # Find a station, and then check its arrivals
@@ -62,13 +73,13 @@ To add:
 * Directionality of lines
 * Determine 'next' stops for each stop (platform)
 
-<A name="toc1-64" title="Dependencies" />
+<A name="toc1-75" title="Dependencies" />
 # Dependencies
 
 * git://github.com/martinblech/xmltodict.git
 * Everything in requirements.txt
 
-<A name="toc1-70" title="Tests" />
+<A name="toc1-81" title="Tests" />
 # Tests
 
     PYTHONPATH=../xmltodict:~/pyenvs/cta/lib/python2.7/site-packages/ nosetests -vv tests

@@ -2,16 +2,21 @@ import sys
 import xmltodict
 import time
 import requests
+import socket
 import threading
 import os.path
 import csv
 import weakref
 import utility_funcs
+import panopticon
 
 class Failure(Exception) :
 	pass
-
-class HTTPFailure(Failure) :
+class NetworkFailure(Failure) :
+	pass
+class ConnectionFailure(NetworkFailure) :
+	pass
+class HTTPFailure(NetworkFailure) :
 	pass
 class APIFailure(Failure) :
 	pass
@@ -33,9 +38,14 @@ class CachingXMLAPI(object) :
 					return data
 
 		#print 'GET %s' % uri
-		resp = requests.get(uri)
-		if resp.status_code != 200 :
-			raise HTTPFailure("Unacceptable HTTP status code %d" % resp.status_code)
+		try :
+			resp = requests.get(uri)
+			if resp.status_code != 200 :
+				raise HTTPFailure("Unacceptable HTTP status code %d" % resp.status_code)
+		except socket.error, se :
+			raise NetworkFailure(se.strerror)
+		except requests.exceptions.ConnectionError :
+			raise ConnectionFailure()
 
 		data = xmltodict.parse(resp.content)
 		self.cache[uri] = (time.time() + self.timeout, data)
@@ -88,10 +98,11 @@ class Line(FindName) :
 	all = []
 	bycode = {}
 
-	def __init__(self, name, code, unixcolor) :
+	def __init__(self, name, code, unixcolor, hexcolor) :
 		self.name = name
 		self.code = code
 		self.unixcolor = unixcolor
+		self.hexcolor = hexcolor
 		self.stops = []
 
 		self.all.append(self)
@@ -184,15 +195,15 @@ class Stop(GeoObject) :
 	def __str__(self) :
 		return '%s-bound Stop %s at %s' % (self.dir_code, self.name, self.station)
 
-Line.Blue = Line('Blue', 'Blue', 12)
-Line.Brown = Line('Brown', 'Brn', 5)
-Line.Red = Line('Red', 'Red', 4)
-Line.Green = Line('Green', 'G', 3)
-Line.Purple = Line('Purple', 'P', 6)
-Line.Purple = Line('Pink', 'Pink', 13)
-Line.PurpleExpress = Line('Purple Express', 'Pexp', 6)
-Line.Yellow = Line('Yellow', 'Y', 8)
-Line.Orange = Line('Orange', 'Org', 7)
+Line.Blue = Line('Blue', 'Blue', 12, '00a1de')
+Line.Brown = Line('Brown', 'Brn', 5, '62361b')
+Line.Red = Line('Red', 'Red', 4, 'c60c30')
+Line.Green = Line('Green', 'G', 3, '009b3a')
+Line.Purple = Line('Purple', 'P', 6, '522398')
+Line.Purple = Line('Pink', 'Pink', 13, 'e27ea6')
+Line.PurpleExpress = Line('Purple Express', 'Pexp', 6, '522398')
+Line.Yellow = Line('Yellow', 'Y', 8, 'f9e300')
+Line.Orange = Line('Orange', 'Org', 7, 'f9461c')
 
 def load() :
 	f = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cta_L_stops.csv')
