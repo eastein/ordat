@@ -34,6 +34,9 @@ class Tracker(object) :
 				except cta.NetworkFailure :
 					print 'network issue, ignoring'
 					pass
+				except cta.APIFailure, af :
+					print 'api failure (ignored):', af
+					pass
 
 			for a in reduce(lambda a1,a2: a1+a2, arrival_sets) :
 				fresh_keys.add(k(a))
