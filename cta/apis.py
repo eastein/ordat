@@ -241,7 +241,7 @@ load()
 class Arrival(object) :
 	@classmethod
 	def totime(cls, s) :
-		return time.strptime('%s CDT' % s, '%Y%m%d %H:%M:%S %Z')
+		return time.strptime(s, '%Y%m%d %H:%M:%S')
 
 	def __init__(self, raw) :
 		try :
