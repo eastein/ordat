@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
 import sys
 import xmltodict
 import time
@@ -7,8 +10,8 @@ import threading
 import os.path
 import csv
 import weakref
-import utility_funcs
-import panopticon
+from . import utility_funcs
+from functools import reduce
 
 class Failure(Exception) :
 	pass
@@ -42,7 +45,7 @@ class CachingXMLAPI(object) :
 			resp = requests.get(uri)
 			if resp.status_code != 200 :
 				raise HTTPFailure("Unacceptable HTTP status code %d" % resp.status_code)
-		except socket.error, se :
+		except socket.error as se :
 			raise NetworkFailure(se.strerror)
 		except requests.exceptions.ConnectionError :
 			raise ConnectionFailure()
@@ -211,16 +214,16 @@ def load() :
 	linecodes = set(Line.bycode.keys())
 
 	for sd in csv.DictReader(open(f)) :
-		stop_id = long(sd['STOP_ID'])
+		stop_id = int(sd['STOP_ID'])
 		dir_code = sd['DIRECTION_ID']
 		stop_name = sd['STOP_NAME']
 		lat, lon = float(sd['LAT']), float(sd['LON'])
 		station_name = sd['STATION_NAME']
 		station_desc = sd['STATION_DESCRIPTIVE_NAME']
-		station_id = long(sd['PARENT_STOP_ID'])
+		station_id = int(sd['PARENT_STOP_ID'])
 
 		if not station_id :
-			print 'ERROR bad station_id %s in sd %s' % (station_id, sd)
+			print('ERROR bad station_id %s in sd %s' % (station_id, sd))
 			continue
 
 		# TODO more validation
@@ -232,7 +235,7 @@ def load() :
 
 		stop = Stop(stop_id, stop_name, station, dir_code)
 		for k,v in sd.items() :
-			if k in Line.bycode and long(v) == 1 :
+			if k in Line.bycode and int(v) == 1 :
 				line = Line.bycode[k]
 				stop.add_line(line)
 
@@ -246,20 +249,20 @@ class Arrival(object) :
 	def __init__(self, raw) :
 		try :
 			self.line = Line.bycode[raw['rt']]
-			self.station = Station.byid[long(raw['staId'])]
-			self.stop = Stop.byid[long(raw['stpId'])]
+			self.station = Station.byid[int(raw['staId'])]
+			self.stop = Stop.byid[int(raw['stpId'])]
 			self.arrives = Arrival.totime(raw['arrT'])
 			self.predicted = Arrival.totime(raw['prdt'])
-			self.run_number = long(raw['rn'])
+			self.run_number = int(raw['rn'])
 			self.dest_name = raw['destNm']
-			self.scheduled = bool(long(raw['isSch']))
-			self.fault = bool(long(raw['isFlt']))
-			self.delay = bool(long(raw['isDly']))
+			self.scheduled = bool(int(raw['isSch']))
+			self.fault = bool(int(raw['isFlt']))
+			self.delay = bool(int(raw['isDly']))
 			self.raw = raw
 		finally :
 			if not hasattr(self, 'raw') :
-				print 'error! for debugging, here is the raw...' 
-				print raw
+				print('error! for debugging, here is the raw...') 
+				print(raw)
 
 	@property
 	def arrives_ts(self) :

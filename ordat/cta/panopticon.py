@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
 import time
-import apis as cta
+import ordat.cta.apis as apis
+from functools import reduce
 
 class Tracker(object) :
 	L_POLL = 300
@@ -22,20 +26,20 @@ class Tracker(object) :
 		if self.l_updated is None or self.now - self.l_updated > self.L_POLL :
 			self.l_updated = self.now
 
-			print 'polling all stations'
+			print('polling all stations')
 			
 			fresh_keys = set()
 			self.old_arrivals = self.all_arrivals
 			self.all_arrivals = list()
 			arrival_sets = []
-			for station in cta.Station.all :
+			for station in apis.Station.all :
 				try :
 					arrival_sets.append(station.arrivals())
-				except cta.NetworkFailure :
-					print 'network issue, ignoring'
+				except apis.NetworkFailure :
+					print('network issue, ignoring')
 					pass
-				except cta.APIFailure, af :
-					print 'api failure (ignored):', af
+				except apis.APIFailure as af :
+					print('api failure (ignored):', af)
 					pass
 
 			for a in reduce(lambda a1,a2: a1+a2, arrival_sets) :
@@ -45,7 +49,7 @@ class Tracker(object) :
 				if k(oa) not in fresh_keys :
 					self.all_arrivals.append(oa)
 			
-			print 'done polling all stations'
+			print('done polling all stations')
 		
 		run_nums = set([arrival.run_number for arrival in self.all_arrivals])
 		for rn in run_nums :
