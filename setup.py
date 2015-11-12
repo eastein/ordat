@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='ordat',
-    version='0.1',
+    version='0.1.0',
     author='Eric Stein',
     author_email='toba@des.truct.org',
     packages=['ordat', 'ordat.cta'],
