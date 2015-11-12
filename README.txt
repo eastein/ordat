@@ -8,7 +8,7 @@ To start, I'm implementing Train Tracker API.  Below is a cursory usage example.
 
 ### To start up, just instantiate an instance of the Train class to initialize the connection to the API.
 
-    >>> import cta
+    >>> import ordat.cta as cta
     >>> train = cta.Train(key='YOURKEYHERE')
 
 ### Get Arrivals by mapid
@@ -29,7 +29,7 @@ This was run late at night, so it found far less than normal!
 
 ### Find Current Train Locations
 
-    import cta
+    import ordat.cta as cta
     train = cta.Train(key='YOURKEYHERE')
     tr = cta.panopticon.Tracker()
     for rn,lat,lon in tr.step() :
