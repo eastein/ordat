@@ -1,1 +1,2 @@
-include ordat/cta_L_stops.csv
+include README.md
+include ordat/cta/cta_L_stops.csv
